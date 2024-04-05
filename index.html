@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Resdemou brand fonts (Brune Ace and Brune Ace SC; both OFL) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace&family=Bruno+Ace+SC&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-image: radial-gradient(circle at 1px 1px, black 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+        .font-brand-caps {
+            font-family: "Bruno Ace SC", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+        .font-brand {
+            font-family: "Bruno Ace", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+    </style>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="tailwind.css" />
+    <title>Resdemou</title>
+</head>
+<body>
+    <div class="h-screen w-screen flex flex-col justify-center items-center font-brand">
+        <div id="root">
+            <div class="mb-6 text-center px-2">
+                <h1 class="font-brand-caps text-4xl md:text-7xl lg:text-9xl">Resdemou</h1>
+                <p class="text-sm lg:text-base italic">Building solutions for matters of the people.</p>
+            </div>
+
+            <!-- This is entirely self-contained under the `mail_form__*` class-space -->
+            <div class="flex justify-center">
+                <div id="mail_form" class="mx-6 max-w-sm md:max-w-md">
+                    <h2 class="text-lg lg:text-2xl mb-1">Sign up for our mailing list</h2>
+                    <p class="text-xs md:text-sm mb-3">We'll keep you updated on Resdemou and what we're building.</p>
+                    <form id="mail_form__form" class="mb-1 flex justify-start">
+                        <input type="email" id="mail_form__email" required placeholder="Your email" class="border border-black p-2 min-w-0 max-w-[15rem] text-sm">
+                        <button id="mail_form__button" type="submit" class="px-6 p-2 inline-flex text-white bg-black hover:text-black hover:bg-white transition-all border border-black outline-red-500 font-brand-caps flex-none">
+                            <span>Submit</span>
+                            <svg class="animate-spin h-5 w-5 ml-2 inline self-center hidden" id="mail_form__spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </form>
+                    <div id="mail_form__error_msg" class="text-red-700 text-xs max-w-sm hidden">Unfortunately, that didn't work: this email might have already been signed up, or there might be a network problem.</div>
+                    <div id="mail_form__bad_email_msg" class="text-red-700 text-xs max-w-sm hidden">Please enter a valid email.</div>
+                    <div id="mail_form__success_msg" class="text-neutral-600 text-xs max-w-sm hidden">Thank you so much, you'll hear from us soon!</div>
+
+                    <script>
+                        // Fauna secret key
+                        const fauna_secret = "fnAFeHbf5oAAQKrOSD4UO5KyinnpdxaIZ8Gvx2VG";
+
+                        // Function to send email address to Fauna database
+                        async function addToMailingList(email) {
+                            document.getElementById("mail_form__success_msg").style.display = "none";
+                            document.getElementById("mail_form__error_msg").style.display = "none";
+                            document.getElementById("mail_form__bad_email_msg").style.display = "none";
+
+                            // Validate the email address with regex
+                            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                                document.getElementById("mail_form__bad_email_msg").style.display = "block";
+                                return;
+                            }
+
+                            document.getElementById("mail_form__spinner").style.display = "inline";
+
+                            const query = {
+                                query: `resdemou_website.create({ email: "${email}" })`,
+                            };
+
+                            try {
+                                const response = await fetch("https://db.fauna.com/query/1", {
+                                    method: "POST",
+                                    headers: {
+                                        "Authorization": `Bearer ${fauna_secret}`,
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify(query),
+                                });
+
+                                const data = await response.json();
+                                if (response.status === 200 && data?.stats?.write_ops === 1) {
+                                    document.getElementById("mail_form__success_msg").style.display = "block";
+                                } else {
+                                    throw new Error("Unexpected response from server");
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                document.getElementById("mail_form__error_msg").style.display = "block";
+                            } finally {
+                                document.getElementById("mail_form__spinner").style.display = "none";
+                            }
+                        }
+
+                        // Event listener for form submission
+                        document.getElementById("mail_form__form").addEventListener("submit", (event) => {
+                            event.preventDefault();
+                            const email = document.getElementById("mail_form__email").value.trim();
+                            addToMailingList(email);
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
